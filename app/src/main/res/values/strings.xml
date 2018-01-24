@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Steuerung</string>
+    <string name="connect">Connect</string>
+    <string name="ip">IP</string>
+    <string name="port">Port</string>
+    <string name="clear">CLEAR</string>
+    <string name="response">Response</string>
+</resources>
