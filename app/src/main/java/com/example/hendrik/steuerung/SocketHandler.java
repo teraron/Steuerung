@@ -1,50 +1,53 @@
-package com.example.hendrik.steuerung;
+/**package com.example.hendrik.steuerung;
 
 
 import android.os.AsyncTask;
 import android.renderscript.ScriptGroup;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class client extends AsyncTask<Void, Void, Void> {
+public class SocketHandler extends AsyncTask<Void, Void, Void> {
 
     String dstAddress;
     int dstPort;
     String response = "";
     TextView textResponse;
+    EditText messageSend;
+    Button buttonSend;
+    boolean var = true;
 
 
-    client(String addr, int port, TextView textResponse) {
+    SocketHandler(String addr, int port, TextView textResponse, String messageSend, Button buttonSend) {
         dstAddress = addr;
         dstPort = port;
         this.textResponse = textResponse;
+
     }
 
     @Override
     protected Void doInBackground(Void... arg0) {
 
-        Socket socket = null;
 
         try {
-            socket = new Socket(dstAddress, dstPort);
+            final Socket socket = new Socket(dstAddress, dstPort);
 
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
-            byte[] buffer = new byte[1024];
+            OutputStream out = socket.getOutputStream();
+            PrintWriter output =  new PrintWriter(out);
 
-            int bytesRead;
+            output.println(messageSend);
+            output.flush();
 
-            InputStream inputStream = socket.getInputStream();
 
-            while ((bytesRead = inputStream.read(buffer)) != -1)
-            {
-                byteArrayOutputStream.write(buffer, 0, bytesRead);
-                response += byteArrayOutputStream.toString("UTF-8");
-            }
 
         }
         catch (UnknownHostException ex)
@@ -58,24 +61,30 @@ public class client extends AsyncTask<Void, Void, Void> {
             response = "IO Exception:  " + ex.toString();
         }
         finally {
-            if (socket != null)
-            {
-                try {
+            //if (socket != null)
+            //{
+                /*try {
                     socket.close();
                 }
                 catch (IOException ex)
                 {
                     ex.printStackTrace();
                 }
-            }
+            //}
         }
+
+
+
        return null;
     }
 
     @Override
     protected void onPostExecute(Void result)
     {
-        textResponse.setText(response);
+
         super.onPostExecute(result);
     }
-}
+
+
+
+}*/

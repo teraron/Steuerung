@@ -5,4 +5,10 @@
     <string name="port">Port</string>
     <string name="clear">CLEAR</string>
     <string name="response">Response</string>
+    <string name="command">Command</string>
+    <string name="textview">TextView</string>
+    <string name="title_activity_steuerung__connected">Steuerung_Connected</string>
+    <string name="errors">Errors</string>
+    <string name="send">Send</string>
+    <string name="message">Message</string>
 </resources>
