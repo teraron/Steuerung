@@ -6,6 +6,7 @@ import android.provider.ContactsContract;
 import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -95,7 +96,9 @@ public class app_connected extends AppCompatActivity{
                 out = new DataOutputStream(socket.getOutputStream());
 
                 out.writeUTF("Test");
+                out.writeUTF("Test2\n");
                 out.flush();
+                out.writeUTF("Test3");
                 //out.close();
             }
             catch (UnknownHostException ex)
@@ -131,7 +134,9 @@ public class app_connected extends AppCompatActivity{
 
     public void sendmsg (final Socket socket)
     {
-        buttonSend.setOnClickListener(new View.OnClickListener()
+        errors = findViewById(R.id.textView_Message);
+        editText_msg = findViewById(R.id.editText_msg);
+        findViewById(R.id.button_send).setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View arg0)
@@ -139,20 +144,18 @@ public class app_connected extends AppCompatActivity{
                 errors.setText(editText_msg.getText().toString());
                 String msg = ""+editText_msg.getText().toString();
 
-                try
+                /*try
                 {
-
-
                     out.writeUTF(msg+"\n");
                 }
                 catch (IOException ex)
                 {
 
-                }
+                }**/
             }
         });
     }
-    /*private class msg_Sender extends AsyncTask<Void, Void, Void>
+    private class msg_Sender extends AsyncTask<Void, Void, Void>
     {
         String message;
 
@@ -181,5 +184,5 @@ public class app_connected extends AppCompatActivity{
 
             return null;
         }
-    }**/
+    }
 }
