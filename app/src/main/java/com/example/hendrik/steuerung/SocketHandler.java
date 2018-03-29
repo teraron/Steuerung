@@ -1,5 +1,4 @@
-/**package com.example.hendrik.steuerung;
-
+/*package com.example.hendrik.steuerung;
 
 import android.os.AsyncTask;
 import android.renderscript.ScriptGroup;
@@ -87,4 +86,5 @@ public class SocketHandler extends AsyncTask<Void, Void, Void> {
 
 
 
-}*/
+}
+*/
