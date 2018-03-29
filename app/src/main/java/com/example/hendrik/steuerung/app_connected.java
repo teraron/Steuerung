@@ -23,6 +23,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import android.view.View.OnClickListener;
 
 
@@ -33,6 +37,7 @@ public class app_connected extends AppCompatActivity{
     Button buttonSend;
     EditText editText_msg;
     TextView errors;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,58 +52,79 @@ public class app_connected extends AppCompatActivity{
         TextView IP = findViewById(R.id.textView_IP);
         IP.setText(ip);
         TextView PORT = findViewById(R.id.textView_PORT);
-        String portS = String .valueOf(port);
-        //TextView errors = (TextView) findViewById(R.id.textView_Message);
-        //errors.setText(status);
+        String portS = String.valueOf(port);
+        TextView errors = (TextView) findViewById(R.id.textView_Message);
+        errors.setText(status);
         PORT.setText(portS);
-        final SocketHandler myClient = new SocketHandler(ip, port, errors, editText_msg.toString(), buttonSend);
-        myClient.execute();
-        sendmsg(socket);
 
+        errors = findViewById(R.id.textView_Message);
+        editText_msg = findViewById(R.id.editText_msg);
 
-        //errors.setText(status);
-        /*try {
-                this.socket.close();
+        // Einen neuen Socket erstellen.
+        // Auf den Task wird max. 2 Sek. gewartet.
+        // falls bis dahin kein Socket erstellt werden konnte, wird ein TiemOutError ausgegeben.
+        AsyncTask<Void, Void, Socket> task = new SocketHandler(ip, port).execute();
+        try
+        {
+            socket = task.get(2, TimeUnit.SECONDS);
+        }
+        catch (TimeoutException ex)
+        {
+            errors.setText("TimeOutError");
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        catch (ExecutionException e)
+        {
+            e.printStackTrace();
+        }
+
+        // Benutze die Klasse msg_Sender um die eingegebene Nachricht auf Tastendruck auf dem übergebenen Socket zu senden
+        // @Hendrik: Ich hab keine Ahnung warum ich hier das mit "final..." machen muss und nicht direkt auf errors zugreifen kann...
+        final TextView finalErrors = errors;
+        findViewById(R.id.button_send).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                finalErrors.setText(editText_msg.getText().toString());
+                String msg = "" + editText_msg.getText().toString();
+                new msg_Sender(socket, msg).execute();
             }
-            catch (IOException ex)
-            {
-                errors.setText("Upps hier stimmt was nicht");
-            }
-**/
+        });
     }
 
-
-    private class SocketHandler extends AsyncTask<Void, Void, Void> {
+    // hier muss das Result, also bei uns "Socket" stehen!  ----\/  (siehe https://developer.android.com/reference/android/os/AsyncTask.html)
+    private class SocketHandler extends AsyncTask<Void, Void, Socket> {
 
         String dstAddress;
         int dstPort;
         String response = "";
-        TextView textResponse;
-        EditText messageSend;
-        Button buttonSend;
+        //TextView textResponse;
+        //EditText messageSend;
+        //Button buttonSend;
         boolean var = true;
 
-//Socket Handler Stellt Verbindung her
-        SocketHandler(String addr, int port, TextView textResponse, String messageSend, Button buttonSend) {
+        //Socket Handler Stellt Verbindung her
+        // @Hendrik: Hier waren bei dir noch mehr Übergabeparameter mit drin.
+        // Da ich nicht wusste was ich damit anfangen soll, hab ich die einfach mal entfernt.
+        SocketHandler(String addr, int port) {
             dstAddress = addr;
             dstPort = port;
-            this.textResponse = textResponse;
+            //this.textResponse = textResponse;
 
         }
 
         @Override
-        protected Void doInBackground(Void... arg0) {
+        protected Socket doInBackground(Void... arg0) {
 
 
             try {
                 socket = new Socket(dstAddress, dstPort);
-
-                out = new DataOutputStream(socket.getOutputStream());
-
-                out.writeUTF("Test");
-                out.writeUTF("Test2\n");
-                out.flush();
-                out.writeUTF("Test3");
+                new msg_Sender(socket, "Connection established!").execute();
+                //out = new DataOutputStream(socket.getOutputStream());
+                //out.writeUTF("Test Welcome Msg Client");
+                //out.flush();
                 //out.close();
             }
             catch (UnknownHostException ex)
@@ -114,75 +140,42 @@ public class app_connected extends AppCompatActivity{
             finally
             {
 
-
             }
-
             connected = 1;
-            return null;
+            return socket;
         }
-
-        @Override
-        protected void onPostExecute(Void result)
-        {
-            textResponse.setText(response);
-            super.onPostExecute(result);
-        }
-
 
 
     }
 
-    public void sendmsg (final Socket socket)
-    {
-        errors = findViewById(R.id.textView_Message);
-        editText_msg = findViewById(R.id.editText_msg);
-        findViewById(R.id.button_send).setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View arg0)
-            {
-                errors.setText(editText_msg.getText().toString());
-                String msg = ""+editText_msg.getText().toString();
-
-                /*try
-                {
-                    out.writeUTF(msg+"\n");
-                }
-                catch (IOException ex)
-                {
-
-                }**/
-            }
-        });
-    }
-    private class msg_Sender extends AsyncTask<Void, Void, Void>
-    {
+// MessageSender Klasse:
+    private class msg_Sender extends AsyncTask<Void, Void, Void> {
+        Socket s;
         String message;
 
-        msg_Sender(String messageSend)
+        msg_Sender(Socket socket, String messageSend)
         {
             message = messageSend;
+            s = socket;
         }
 
         @Override
-        protected Void doInBackground(Void...arg0)
-        {
+        protected Void doInBackground(Void... arg0) {
 
-            try
-            {
-
-                output.print(message);
+            try {
+                out = new DataOutputStream(s.getOutputStream());
+                out.writeUTF(message);
                 out.flush();
-                out.close();
+                //out.close();
+                //socket.close(); // nicht machen sonst ist der Socket natürlich geschlossen!
 
-                socket.close();
-            }
-            catch (IOException ex)
+            } catch (IOException ex)
             {
-
+                errors.setText("Upps hier stimmt was nicht");
             }
 
             return null;
         }
     }
+
 }
